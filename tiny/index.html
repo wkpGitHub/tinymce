@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="./js/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
+  <!-- <script src="./js/tinymce-5.js" referrerpolicy="origin"></script> -->
+</head>
+
+<body>
+  <textarea>Next, use our Get Started docs to setup Tiny!</textarea>
+  <script>
+    // tinymce.baseURL = "https://cdn.tiny.cloud/1/no-origin/tinymce/5.10.2-126"
+    tinymce.init({
+      selector: 'textarea',
+      height: 600,
+      language: 'zh_CN',//注意大小写
+      branding: false, // 隐藏右下角技术支持
+      elementpath: false, // 隐藏底部标签
+      menubar: false, // 隐藏菜单栏
+      plugins: 'lists link image media table preview print fullscreen',
+      toolbar: 'undo redo | bold italic underline strikethrough alignleft aligncenter alignright numlist bullist | forecolor backcolor | table image media link | preview print fullscreen',
+      powerpaste_word_import: 'propmt',// 参数可以是propmt, merge, clear，效果自行切换对比
+      powerpaste_html_import: 'propmt',// propmt, merge, clear
+      powerpaste_allow_local_images: true,
+      paste_data_images: true,
+      // urlconverter_callback: (url, node, onSave, name) => {
+      //   console.log('=================')
+      //   if (node === 'img' && url.startsWith('blob:')) {
+      //     // Do some custom URL conversion
+      //     console.log('urlConverter:', url, node, onSave, name)
+      //     tinymce.activeEditor && tinymce.activeEditor.uploadImages()
+      //   }
+      //   // Return new URL
+      //   return url
+      // },
+      // 图片上传
+      /* without images_upload_url set, Upload tab won't show up*/
+      // images_upload_url: 'postAcceptor.php',
+      // /* we override default upload handler to simulate successful upload*/
+      // images_upload_handler: function (blobInfo, succFun, failFun) {
+      //   console.log('----------------')
+      //   var xhr, formData;
+      //   var file = blobInfo.blob();//转化为易于理解的file对象
+      //   xhr = new XMLHttpRequest();
+      //   xhr.withCredentials = false;
+      //   xhr.open('POST', '/demo/upimg.php');
+      //   xhr.onload = function () {
+      //     var json;
+      //     if (xhr.status != 200) {
+      //       failFun('HTTP Error: ' + xhr.status);
+      //       return;
+      //     }
+      //     json = JSON.parse(xhr.responseText);
+      //     if (!json || typeof json.location != 'string') {
+      //       failFun('Invalid JSON: ' + xhr.responseText);
+      //       return;
+      //     }
+      //     succFun(json.location);
+      //   };
+      //   formData = new FormData();
+      //   formData.append('file', file, file.name);//此处与源文档不一样
+      //   xhr.send(formData);
+      // },
+      // menubar: "insert",
+      // 视频上传
+      file_picker_types: 'media image',
+      //be used to add custom file picker to those dialogs that have it.
+      file_picker_callback: function (cb, value, meta) {
+        if (meta.filetype == 'media' || meta.filetype == 'image') {
+          //创建一个隐藏的type=file的文件选择input
+          let input = document.createElement('input');
+          input.setAttribute('type', 'file');
+          input.onchange = function () {
+            let file = this.files[0];//只选取第一个文件。如果要选取全部，后面注意做修改
+            let xhr, formData;
+            xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload');
+            xhr.withCredentials = true;
+            xhr.onerror = function () {
+              //根据自己的需要添加代码
+              console.log(xhr.status, value);
+              cb('http://moxiecode.cachefly.net/tinymce/v9/images/logo.png');
+              return;
+            };
+            xhr.onload = function () {
+              let json;
+              if (xhr.status < 200 || xhr.status >= 300) {
+                console.log('HTTP 错误: ' + xhr.status);
+                console.log(xhr.status, value);
+                cb('https://top1-video-public.cdn.bcebos.com/fce97ef4a884b8caa6479852bd51944e87a3a606.mp4');
+                return;
+              }
+              json = JSON.parse(xhr.responseText);
+              //假设接口返回JSON数据为{status: 0, msg: "上传成功", data: {location: "/localImgs/1546434503854.mp4"}}
+              if (json.status == 0) {
+                //接口返回的文件保存地址
+                let mediaLocation = json.data.location;
+                //cb()回调函数，将mediaLocation显示在弹框输入框中
+                cb(mediaLocation, { title: file.name });
+              } else {
+                console.log(json.msg);
+                console.log(xhr.status, value);
+                cb('http://moxiecode.cachefly.net/tinymce/v9/images/logo.png');
+                return;
+              }
+
+            };
+            formData = new FormData();
+            //假设接口接收参数为file,值为选中的文件
+            formData.append('file', file);
+            //正式使用将下面被注释的内容恢复
+            xhr.send(formData);
+          }
+          //触发点击
+          input.click();
+        }
+      },
+
+      content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+    });
+  </script>
+</body>
+
+</html>
